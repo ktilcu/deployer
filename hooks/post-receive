@@ -1,0 +1,54 @@
+#!/bin/bash
+# Parameter Substitution Used in the following code:
+# http://tldp.org/LDP/abs/html/parameter-substitution.html
+# ${PWD##*/} ...etc.
+set -e
+setDestination(){
+	if [ "$1" == "master" ]; then
+		destination="/home/trike/update/$dir"		
+	else
+		destination="/home/trike/update/$dir-$1"		
+	fi
+
+	if [ ! -d "$destination" ]; then
+		mkdir "$destination"
+	fi
+}
+
+push(){
+	export GIT_DIR="$currentdir/.git"
+	export GIT_WORK_TREE="$currentdir"
+	cd $currentdir 
+	echo "======================================"
+	echo "Checking out $gbranch"
+	echo "======================================"
+	git checkout -f $gbranch
+	git reset --hard
+	git clean -df
+	echo "======================================"
+	echo "Syncing videos between dev and $gbranch"
+	echo "======================================"
+	git media sync
+	cd ..
+	setDestination $gbranch
+	rsync -av --exclude='.git/' "$dir/"  "$destination/"
+	dir=${destination##*/}
+	
+	echo "======================================"
+	echo "Adding Files to MongoDB"
+	echo "======================================"
+	cd /home/trike/update
+	/home/trike/server/newPresTool.py -f $dir
+	echo "======================================"
+	echo "Push Complete!"
+	echo "======================================"
+}
+
+currentdir=`dirname $(pwd)`
+dir=${currentdir##*/}
+destination=""
+
+while read oldrev newrev ref; do
+	gbranch=`echo "$ref" | rev | cut -d"/" -f1 | rev`
+	push	
+done

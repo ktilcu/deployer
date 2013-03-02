@@ -1,0 +1,37 @@
+#!/bin/bash
+
+authPush(){
+	auth=$(authenticate)
+	if [ $auth ]
+	then
+		exit 0
+	else
+		echo "=========================================================="
+		echo "Authorization Failed!"
+		echo "You must obtain the permissions needed to access the $gbranch"
+		echo "=========================================================="
+		exit 1
+	fi
+}
+
+authenticate(){
+	case $ugroup in
+		*"$matchingGroup"*) echo true ;;
+		*) echo false; ;;
+	esac	
+}
+
+ref="$1"
+oldrev="$2"
+newrev="$3"
+gbranch=`echo "$ref" | rev | cut -d"/" -f1 | rev`
+usid=`whoami`
+ugroup=`groups`
+matchingGroup="admin"
+
+case $gbranch in 
+	"master") authPush ;;
+	"dev") exit 0 ;;
+	"rc") authPush ;;
+	*) echo "I don't recognize $gbranch as something a client would want to see, please upload to dev, rc or master"; exit 1 ;;
+esac

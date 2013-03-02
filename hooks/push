@@ -1,0 +1,36 @@
+#!/bin/bash
+# only pushes the branch specified to dev
+gbranch=$1
+currentdir=`pwd`
+dir=${currentdir##*/}
+
+push(){
+	echo "======================================"
+	echo "Checking out $gbranch"
+	echo "======================================"
+	git checkout -f $gbranch
+	git reset --hard HEAD
+	echo "======================================"
+	echo "Syncing videos between dev and $gbranch"
+	echo "======================================"
+	git media sync
+
+	destination="/home/trike/update/$dir-dev"
+	if [ ! -d "$destination" ]; then
+		mkdir "$destination"
+	fi
+	cd ..
+	rsync -av --exclude='.git/' $dir "$destination/"
+	cd $dir
+	dir=${destination##*/}
+
+	echo "======================================"
+	echo "Adding Files to MongoDB"
+	echo "======================================"
+	cd /home/trike/update
+	/home/trike/server/newPresTool.py -f $dir
+	echo "======================================"
+	echo "Push Complete!"
+	echo "======================================"
+}
+push
