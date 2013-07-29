@@ -32,9 +32,10 @@ def parsePost():
 
 
 def deploy(repo, branch):
+    branches = ['dev','rc']
     logger.error("Received Communication from Github for repo %s to push branch %s \n" % (repo, branch))
-    if not branch == "dev":
-        logger.error("We only do dev pushes these days.")
+    if not branch in branches:
+        logger.error("We only do dev and rc pushes these days.")
     folder = whatFolder(repo)
     subprocess.call("/home/trike/deploy.sh %s %s %s" % (folder, branch, repo), shell=True)
 
